@@ -5,8 +5,8 @@ const path = require("path");
 const dbPath = process.env.DATABASE_FILE;
 const db = new sqlite3.Database(dbPath, (err) =>
   err
-    ? console.error("SQLite error:", err.message)
-    : console.log("SQLite connected at", dbPath)
+    ? console.error("SQLite Database Error: ", err.message)
+    : console.log("SQLite DB Connection Established: ", dbPath)
 );
 
 db.serialize(() => {
@@ -16,7 +16,7 @@ db.serialize(() => {
             email TEXT NOT NULL UNIQUE,
             username TEXT NOT NULL UNIQUE,
             password TEXT NOT NULL,
-            role TEXT NOT NULL DEFAULT 'user',
+            role INTEGER NOT NULL DEFAULT 2,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
           );`);
   db.run(`CREATE TABLE IF NOT EXISTS posts(
@@ -29,10 +29,10 @@ db.serialize(() => {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(author_id) REFERENCES users(id)
           );`);
-  db.run(`CREATE TABLE IF NOT EXISTS media(
+  db.run(`CREATE TABLE IF NOT EXISTS images(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             post_id INTEGER NOT NULL,
-            url TEXT NOT NULL,
+            image_url TEXT NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE
           );`);
@@ -62,6 +62,20 @@ db.serialize(() => {
             FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE,
             FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
           );`);
+  db.run(`CREATE TABLE IF NOT EXISTS user_roles_def(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            role_type TEXT NOT NULL,
+          );`);
+  // db.run(
+  //   `INSERT INTO user_roles_def VALUES (1, 'Admin'), (2, 'User')`,
+  //   (err) => {
+  //     if (err) {
+  //       console.error("Error Occured: " + err);
+  //     } else {
+  //       console.log("Wrote to user_roles_def");
+  //     }
+  //   }
+  // );
 });
 
 const run = (sql, params = []) =>
