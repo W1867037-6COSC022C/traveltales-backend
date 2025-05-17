@@ -1,12 +1,15 @@
 require("dotenv").config();
 const express = require("express");
+
+const userRoutes = require("./routes/userRoutes");
+
 const app = express();
 
 /* routes */
-app.use(express.json());
-["./routes/authRoutes"].forEach((p) => app.use("/api", require(p)));
+app.use("/auth", userRoutes);
 
 const PORT = process.env.PORT;
+
 app.listen(PORT, () =>
   console.log(`Traveltales API ↠ http://localhost:${PORT}`)
 );
