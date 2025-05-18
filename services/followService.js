@@ -6,16 +6,16 @@ const followDao = require("../dao/followDAO");
  * @param {int} userToBeFollowedId
  */
 const followUser = async (followerId, userToBeFollowedId) => {
-  await followDao.followUser(followerId, targetId);
+  await followDao.followUser(followerId, userToBeFollowedId);
 };
 
 /**
  * unfollows a following user from profile
  * @param {int} followerId
- * @param {int} userToBeUnfollowwedId
+ * @param {int} userToBeUnfollowedId
  */
-const unfollowUser = async (followerId, userToBeUnfollowwedId) => {
-  await followDao.unfollowUser(followerId, targetId);
+const unfollowUser = async (followerId, userToBeUnfollowedId) => {
+  await followDao.unfollowUser(followerId, userToBeUnfollowedId);
 };
 
 /**

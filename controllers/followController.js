@@ -17,11 +17,11 @@ const followUser = catchAsync(async (req, res) => {
  * unfollows a user by specified user
  */
 const unfollowUser = catchAsync(async (req, res) => {
-  const userToBeUnfollowwedId = Number(req.params.userId);
-  if (!Number.isInteger(userToBeUnfollowwedId)) {
+  const userToBeUnfollowedId = Number(req.params.userId);
+  if (!Number.isInteger(userToBeUnfollowedId)) {
     return res.status(400).json({ error: "User to be Unfollowed Not Found" });
   }
-  await followService.unfollowUser(req.user.id, userToBeUnfollowwedId);
+  await followService.unfollowUser(req.user.id, userToBeUnfollowedId);
   res.sendStatus(204);
 });
 
