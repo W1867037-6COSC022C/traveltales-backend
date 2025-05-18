@@ -4,25 +4,25 @@ module.exports = {
   /**
    * follows a user
    * @param {int} uid
-   * @param {int} targetId
+   * @param {int} targeuserToBeFollowedId
    * @returns
    */
-  followUser: (uid, targetId) =>
+  followUser: (uid, userToBeFollowedId) =>
     run(`INSERT OR IGNORE INTO follows(follower_id,following_id) VALUES(?,?)`, [
       uid,
-      targetId,
+      userToBeFollowedId,
     ]),
 
   /**
    * removes a user from following
    * @param {int} uid
-   * @param {int} targetId
+   * @param {int} userToBeUnfollowedId
    * @returns
    */
-  unfollowUser: (uid, targetId) =>
+  unfollowUser: (uid, userToBeUnfollowedId) =>
     run(`DELETE FROM follows WHERE follower_id=? AND following_id=?`, [
       uid,
-      targetId,
+      userToBeUnfollowedId,
     ]),
   /**
    * retrieves following users list
