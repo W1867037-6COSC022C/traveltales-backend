@@ -5,7 +5,7 @@ const uploadImage = require("../middleware/uploadImage");
 
 const MAX_ALLOWED_IMAGES_PER_POST = 3;
 
-router.get("/feed", auth, postController.listFeed);
+router.get("/feed", auth, postController.generateFeed);
 
 router.get("/", postController.listPosts);
 router.get("/:postId", postController.getPost);

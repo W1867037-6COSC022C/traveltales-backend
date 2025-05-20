@@ -12,7 +12,7 @@ const MAX_ALLOWED_IMAGES_PER_POST = 3;
  * moves an uploaded image into the uploads directory and record the relevent URL.
  */
 async function persistImage(postId, file) {
-  const imageId = await imageDao.add(postId);
+  const imageId = await imageDao.addImage(postId);
   const ext = path.extname(file.originalname);
   const formattedImageName = `img-${imageId}${ext}`;
   await fs.rename(
@@ -98,7 +98,7 @@ async function listPosts(filters = {}) {
  * lists posts for a given user based on the user's following details
  */
 async function listFeed(userId, filters = {}) {
-  const rows = await followDao.getFollowing(userId);
+  const rows = await followDao.getFollowingUser(userId);
   const authorIds = rows.map((r) => r.id);
   if (authorIds.length === 0) {
     return [];
