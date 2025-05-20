@@ -1,4 +1,4 @@
-const { run, all } = require("../config/database");
+const { run, all, get } = require("../config/database");
 
 module.exports = {
   /**
@@ -49,4 +49,16 @@ module.exports = {
         WHERE f.following_id=?`,
       [uid]
     ),
+
+  /** count how many people a user is following */
+  countFollowing: (uid) =>
+    get(`SELECT COUNT(*) AS cnt FROM follows WHERE follower_id = ?`, [
+      uid,
+    ]).then((r) => r.cnt),
+
+  /** count how many followers the user has */
+  countFollowers: (uid) =>
+    get(`SELECT COUNT(*) AS cnt FROM follows WHERE following_id = ?`, [
+      uid,
+    ]).then((r) => r.cnt),
 };

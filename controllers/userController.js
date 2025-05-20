@@ -23,8 +23,8 @@ const login = catchAsync(async (req, res) => {
  * GET for profile retrival
  */
 const profile = catchAsync(async (req, res) => {
-  const user = await authService.getProfile(req.user.id);
-  res.json(user);
+  const data = await authService.getDashboardProfile(req.user.id);
+  res.json(data);
 });
 
 /**

@@ -78,7 +78,7 @@ async function deletePost(authorId, postId) {
  * retrieves details of a given post
  */
 async function getPostById(id) {
-  const post = await postDao.byId(id);
+  const post = await postDao.getPostById(id);
   if (!post) {
     throw new Error("Failed to find a matching post");
   }

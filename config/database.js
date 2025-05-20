@@ -2,7 +2,8 @@ require("dotenv").config();
 const sqlite3 = require("sqlite3").verbose();
 const path = require("path");
 
-const dbPath = process.env.DATABASE_FILE;
+const dbPath = process.env.DATABASE_FILE || "./traveltales.db";
+
 const db = new sqlite3.Database(dbPath, (err) =>
   err
     ? console.error("SQLite Database Error: ", err.message)
@@ -67,16 +68,16 @@ db.serialize(() => {
   role_type TEXT NOT NULL
 );`);
 
-  // db.run(
-  //   `INSERT INTO user_roles_def VALUES (1, 'Admin'), (2, 'User')`,
-  //   (err) => {
-  //     if (err) {
-  //       console.error("Error Occured: " + err);
-  //     } else {
-  //       console.log("Wrote to user_roles_def");
-  //     }
-  //   }
-  // );
+  db.run(
+    `INSERT OR IGNORE INTO user_roles_def VALUES (1, 'Admin'), (2, 'User')`,
+    (err) => {
+      if (err) {
+        console.error("Error Occured: " + err);
+      } else {
+        console.log("Wrote to user_roles_def");
+      }
+    }
+  );
 });
 
 const run = (sql, params = []) =>
