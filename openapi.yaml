@@ -1,0 +1,462 @@
+openapi: 3.0.3
+info:
+  title: TravelTales API
+  version: 1.0.0
+  description: |
+    REST API for the TravelTales blogging platform
+    (Express + SQLite).
+
+servers:
+  - url: http://localhost:3000
+
+tags:
+  - name: Auth
+  - name: Posts
+  - name: Votes
+  - name: Comments
+  - name: Follow
+  - name: Static
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    postId:
+      in: path
+      name: postId
+      required: true
+      schema: { type: integer }
+    userId:
+      in: path
+      name: userId
+      required: true
+      schema: { type: integer }
+    commentId:
+      in: path
+      name: cid
+      required: true
+      schema: { type: integer }
+
+  schemas:
+    UserPublic:
+      type: object
+      properties:
+        id: { type: integer, example: 7 }
+        username: { type: string, example: alice }
+    AuthResponse:
+      type: object
+      properties:
+        token: { type: string, description: JWT }
+        user:
+          allOf:
+            - $ref: "#/components/schemas/UserPublic"
+            - type: object
+              properties:
+                email: { type: string, format: email }
+                role: { type: integer, example: 2 }
+                created_at: { type: string, format: date-time }
+
+    Image:
+      type: object
+      properties:
+        id: { type: integer }
+        image_url: { type: string }
+
+    Post:
+      type: object
+      properties:
+        id: { type: integer }
+        author_id: { type: integer }
+        author: { type: string }
+        title: { type: string }
+        content: { type: string }
+        country: { type: string }
+        visit_date: { type: string, format: date }
+        created_at: { type: string, format: date-time }
+        likes: { type: integer }
+        dislikes: { type: integer }
+        comments: { type: integer }
+        images:
+          type: array
+          items: { $ref: "#/components/schemas/Image" }
+
+    Comment:
+      type: object
+      properties:
+        id: { type: integer }
+        user_id: { type: integer }
+        username: { type: string }
+        content: { type: string }
+        created_at: { type: string, format: date-time }
+
+    VoteTotals:
+      type: object
+      properties:
+        likes: { type: integer }
+        dislikes: { type: integer }
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, email, password]
+              properties:
+                username: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "409": { description: User already exists }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "401": { description: Invalid credentials }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Client-side token purge (no server state)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: Done }
+
+  /auth/profile:
+    get:
+      tags: [Auth]
+      summary: Current-user dashboard
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: integer }
+                  username: { type: string }
+                  email: { type: string }
+                  role: { type: integer }
+                  created_at: { type: string }
+                  followers: { type: integer }
+                  following: { type: integer }
+                  posts:
+                    type: array
+                    items: { $ref: "#/components/schemas/Post" }
+
+  /posts:
+    get:
+      tags: [Posts]
+      summary: Public list
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: type
+          schema: { type: string, enum: [title, author, country] }
+        - in: query
+          name: sortBy
+          schema: { type: string, enum: [latest, likes, comments] }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: Posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Post" }
+
+    post:
+      tags: [Posts]
+      summary: Create post
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [title, content, country, visitDate]
+              properties:
+                title: { type: string }
+                content: { type: string }
+                country: { type: string }
+                visitDate: { type: string, format: date }
+                images:
+                  type: array
+                  items: { type: string, format: binary }
+                  maxItems: 3
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: integer }
+
+  /posts/feed:
+    get:
+      tags: [Posts]
+      summary: Followed-users feed
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [title, author, country]
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [latest, likes, comments]
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Post" }
+
+  /posts/{postId}:
+    get:
+      tags: [Posts]
+      summary: Get post
+      parameters: [{ $ref: "#/components/parameters/postId" }]
+      responses:
+        "200":
+          description: Post
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Post" }
+
+    put:
+      tags: [Posts]
+      summary: Update post
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/postId" }]
+      requestBody: { $ref: "#/paths/~1posts/post/requestBody" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Post" }
+
+    delete:
+      tags: [Posts]
+      summary: Delete post
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/postId" }]
+      responses:
+        "204": { description: Gone }
+
+  /posts/{postId}/votes:
+    get:
+      tags: [Votes]
+      summary: Totals
+      parameters: [{ $ref: "#/components/parameters/postId" }]
+      responses:
+        "200":
+          description: Counts
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VoteTotals" }
+
+  /posts/{postId}/vote:
+    get:
+      tags: [Votes]
+      summary: My reaction
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/postId" }]
+      responses:
+        "200":
+          description: Like / dislike / null
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vote:
+                    type: string
+                    nullable: true
+                    description: true = like, false = dislike, null = none
+
+    delete:
+      tags: [Votes]
+      summary: Clear reaction
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/postId" }]
+      responses:
+        "204": { description: Cleared }
+
+  /posts/{postId}/like:
+    post:
+      tags: [Votes]
+      summary: Like
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/postId" }]
+      responses:
+        "204": { description: Liked }
+
+  /posts/{postId}/dislike:
+    post:
+      tags: [Votes]
+      summary: Dislike
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/postId" }]
+      responses:
+        "204": { description: Disliked }
+
+  /posts/{postId}/comments:
+    get:
+      tags: [Comments]
+      summary: List comments
+      parameters: [{ $ref: "#/components/parameters/postId" }]
+      responses:
+        "200":
+          description: Comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Comment" }
+
+    post:
+      tags: [Comments]
+      summary: Add comment
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/postId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content: { type: string }
+      responses:
+        "201":
+          description: Added
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Comment" }
+
+  /posts/comments/{cid}:
+    delete:
+      tags: [Comments]
+      summary: Delete my comment
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/commentId" }]
+      responses:
+        "204": { description: Deleted }
+
+  /follows/following:
+    get:
+      tags: [Follow]
+      summary: List I follow
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Users
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/UserPublic" }
+
+  /follows/{userId}/follow:
+    post:
+      tags: [Follow]
+      summary: Follow user
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/userId" }]
+      responses:
+        "204": { description: Followed }
+
+    delete:
+      tags: [Follow]
+      summary: Unfollow user
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/userId" }]
+      responses:
+        "204": { description: Unfollowed }
+
+  /uploads/{file}:
+    get:
+      tags: [Static]
+      summary: Serve uploaded image
+      parameters:
+        - in: path
+          name: file
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Image
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
