@@ -63,9 +63,10 @@ db.serialize(() => {
             FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
           );`);
   db.run(`CREATE TABLE IF NOT EXISTS user_roles_def(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            role_type TEXT NOT NULL,
-          );`);
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  role_type TEXT NOT NULL
+);`);
+
   // db.run(
   //   `INSERT INTO user_roles_def VALUES (1, 'Admin'), (2, 'User')`,
   //   (err) => {
